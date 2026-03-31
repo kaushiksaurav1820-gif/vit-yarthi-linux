@@ -1,0 +1,142 @@
+#!/bin/bash
+# ============================================================
+# Script 5: Open Source Manifesto Generator
+# Author: Saurav | Roll: 24BSA10300
+# Course: Open Source Software | OSS NGMC
+# Description: Interactively asks the user three questions and
+#              generates a personalised open-source manifesto,
+#              saved to a .txt file.
+# Concepts: read (user input), string concatenation, file
+#           writing with >, date command, aliases (demonstrated
+#           via comments and a local alias example).
+# ============================================================
+
+# --- Alias demonstration ---
+# Aliases are shorthand names for commands or command sequences.
+# In scripts they are rarely used (they don't expand in non-interactive shells
+# by default), but we define and use one here to demonstrate the concept.
+# To enable alias expansion in a script, we use 'shopt -s expand_aliases'.
+shopt -s expand_aliases
+alias today='date "+%d %B %Y"'    # Alias: 'today' expands to a formatted date command
+alias underline='echo "------------------------------------------------------------"'
+
+# --- Display intro screen ---
+clear
+echo "=================================================================="
+echo "  OPEN SOURCE MANIFESTO GENERATOR"
+echo "  Student: Saurav | 24BSA10300"
+echo "  Course : Open Source Software | OSS NGMC"
+echo "=================================================================="
+echo ""
+echo "  This tool will generate your personal open-source philosophy"
+echo "  statement based on your answers to three questions."
+echo ""
+underline   # Using alias defined above
+echo ""
+echo "  Answer thoughtfully. Your responses shape your manifesto."
+echo ""
+
+# --- Gather user input using 'read' with prompts ---
+# -p allows inline prompt text; the answer is stored in the variable
+read -p "  1. Name one open-source tool you use every day: " TOOL
+echo ""
+
+read -p "  2. In one word, what does 'freedom' mean to you in tech? " FREEDOM
+echo ""
+
+read -p "  3. Name one thing you would build and share freely with the world: " BUILD
+echo ""
+
+# --- Validate that all inputs were provided ---
+# -z tests if a string is empty
+if [ -z "$TOOL" ] || [ -z "$FREEDOM" ] || [ -z "$BUILD" ]; then
+    echo "  ERROR: All three questions must be answered."
+    echo "  Please run the script again and fill in all responses."
+    exit 1
+fi
+
+# --- Construct the output filename using the current username ---
+# This makes each student's manifesto file uniquely named
+USERNAME=$(whoami)
+DATE=$(today)   # Using our alias — expands to: date "+%d %B %Y"
+OUTPUT="manifesto_${USERNAME}.txt"
+
+echo ""
+underline
+echo "  Generating your manifesto..."
+echo ""
+
+# --- Write the manifesto to a file using > (overwrite) and >> (append) ---
+# The > operator creates the file (or overwrites if it exists)
+# The >> operator appends to the existing file
+
+# Write the header
+echo "=================================================================" > "$OUTPUT"
+echo "  OPEN SOURCE MANIFESTO" >> "$OUTPUT"
+echo "  Author   : $USERNAME (VARUN SINGH BAGHEL, 24MIM10210)" >> "$OUTPUT"
+echo "  Software : Python | Course: OSS NGMC" >> "$OUTPUT"
+echo "  Generated: $DATE" >> "$OUTPUT"
+echo "=================================================================" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# --- Compose the manifesto paragraph using string concatenation ---
+# We build the paragraph by combining the user's answers with
+# connecting prose. Each >> appends the next part of the document.
+echo "MY OPEN SOURCE MANIFESTO" >> "$OUTPUT"
+echo "------------------------" >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Paragraph 1: About daily tools and their significance
+echo "Every day I use $TOOL — not just as a piece of software, but as" >> "$OUTPUT"
+echo "a symbol of what the open-source movement has made possible." >> "$OUTPUT"
+echo "$TOOL exists because someone chose to share their work with the world" >> "$OUTPUT"
+echo "rather than lock it behind a paywall or a proprietary license." >> "$OUTPUT"
+echo "That choice changed what is possible for me, and for millions of others." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Paragraph 2: About freedom and values
+echo "To me, freedom in technology means $FREEDOM. It means that the tools" >> "$OUTPUT"
+echo "I build my work on are not owned by a single corporation that can" >> "$OUTPUT"
+echo "revoke my access, change the price, or discontinue the product." >> "$OUTPUT"
+echo "It means I have the right to study how the software works, to fix" >> "$OUTPUT"
+echo "what is broken, and to share those fixes with others." >> "$OUTPUT"
+echo "The four freedoms — to use, study, modify, and distribute — are not" >> "$OUTPUT"
+echo "abstract philosophy. They are practical guarantees that protect the" >> "$OUTPUT"
+echo "work I depend on from the decisions of a boardroom I have no voice in." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Paragraph 3: Commitment to giving back
+echo "I commit to this: one day, I will build $BUILD and release it" >> "$OUTPUT"
+echo "under an open-source license. Not because I expect nothing in return," >> "$OUTPUT"
+echo "but because I understand that everything I have learned was built on" >> "$OUTPUT"
+echo "the shared work of people who came before me." >> "$OUTPUT"
+echo "Guido van Rossum gave us Python in 1991. Linus Torvalds gave us Linux." >> "$OUTPUT"
+echo "The least I can do is give something back to the commons that made me." >> "$OUTPUT"
+echo "" >> "$OUTPUT"
+
+# Closing signature
+echo "----------------------------------------------------------------" >> "$OUTPUT"
+echo "Signed: $USERNAME" >> "$OUTPUT"
+echo "Date  : $DATE" >> "$OUTPUT"
+echo "=================================================================" >> "$OUTPUT"
+
+# --- Confirm the file was written successfully ---
+if [ -f "$OUTPUT" ]; then
+    echo "  Manifesto saved to: $OUTPUT"
+    echo ""
+    underline   # Alias usage
+    echo ""
+    # Display the manifesto content using cat
+    cat "$OUTPUT"
+    echo ""
+    underline
+    echo ""
+    echo "  Word count  : $(wc -w < "$OUTPUT") words"
+    echo "  Line count  : $(wc -l < "$OUTPUT") lines"
+    echo ""
+    echo "  Your manifesto is ready. Add it to your GitHub repository."
+    echo "  Path: $(pwd)/$OUTPUT"
+else
+    echo "  ERROR: Failed to write manifesto file."
+    exit 1
+fi
