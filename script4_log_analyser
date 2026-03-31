@@ -1,0 +1,141 @@
+#!/bin/bash
+# ============================================================
+# Script 4: Log File Analyzer
+# Author: Saurav | Roll: 24BSA10300
+# Course: Open Source Software | OSS NGMC
+# Description: Reads a log file line by line, counts occurrences
+#              of a keyword, and prints a summary with last 5
+#              matching lines.
+# Usage: ./script4_log_analyzer.sh <logfile> [keyword]
+#        Example: ./script4_log_analyzer.sh /var/log/syslog error
+#        Default keyword: error
+# ============================================================
+
+echo "=================================================================="
+echo "  LOG FILE ANALYZER"
+echo "  Student: Saurav | 24BSA10300"
+echo "=================================================================="
+echo ""
+
+# --- Accept command-line arguments ---
+# $1 = path to the log file (required)
+# $2 = keyword to search for (optional, defaults to "error")
+LOGFILE=$1
+KEYWORD=${2:-"error"}   # If $2 is not provided, use "error" as default
+
+# --- Validate that a log file argument was provided ---
+if [ -z "$LOGFILE" ]; then
+    echo "  ERROR: No log file specified."
+    echo "  Usage: $0 <logfile> [keyword]"
+    echo ""
+    echo "  Common log files to try:"
+    echo "    /var/log/syslog         (Ubuntu/Debian)"
+    echo "    /var/log/messages       (RHEL/CentOS)"
+    echo "    /var/log/auth.log       (authentication logs)"
+    echo "    /var/log/kern.log       (kernel logs)"
+    exit 1
+fi
+
+# --- Check if file exists using the -f test flag ---
+if [ ! -f "$LOGFILE" ]; then
+    echo "  ERROR: File '$LOGFILE' not found or is not a regular file."
+
+    # --- Do-while style retry: suggest alternative log files ---
+    echo ""
+    echo "  Searching for alternative log files..."
+    RETRY_COUNT=0
+    MAX_RETRIES=3
+
+    # Loop through common log locations until we find one that exists
+    for ALT_LOG in /var/log/syslog /var/log/messages /var/log/kern.log /var/log/auth.log; do
+        if [ -f "$ALT_LOG" ]; then
+            echo "  Found: $ALT_LOG — you can run:"
+            echo "  $0 $ALT_LOG $KEYWORD"
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            [ $RETRY_COUNT -ge $MAX_RETRIES ] && break
+        fi
+    done
+
+    [ $RETRY_COUNT -eq 0 ] && echo "  No standard log files found on this system."
+    exit 1
+fi
+
+# --- Check if the file is empty before processing ---
+if [ ! -s "$LOGFILE" ]; then
+    echo "  WARNING: Log file '$LOGFILE' is empty. Nothing to analyze."
+    exit 0
+fi
+
+echo "  Log file  : $LOGFILE"
+echo "  Keyword   : '$KEYWORD' (case-insensitive)"
+echo "  File size : $(du -sh "$LOGFILE" | cut -f1)"
+echo ""
+echo "  Analyzing... please wait."
+echo "------------------------------------------------------------------"
+
+# --- Initialize counters ---
+TOTAL_LINES=0      # Total lines read
+MATCH_COUNT=0      # Lines containing the keyword
+
+# --- while read loop: read the file line by line ---
+# IFS= prevents leading/trailing whitespace from being stripped
+# -r flag prevents backslash interpretation
+while IFS= read -r LINE; do
+    TOTAL_LINES=$((TOTAL_LINES + 1))
+
+    # --- if-then inside the loop: check if the line contains the keyword ---
+    # grep -iq: -i = case-insensitive, -q = quiet (no output, just exit code)
+    if echo "$LINE" | grep -iq "$KEYWORD"; then
+        MATCH_COUNT=$((MATCH_COUNT + 1))
+    fi
+
+done < "$LOGFILE"
+
+# --- Display summary ---
+echo ""
+echo "=================================================================="
+echo "  ANALYSIS SUMMARY"
+echo "=================================================================="
+echo ""
+echo "  Total lines read  : $TOTAL_LINES"
+echo "  Keyword matches   : $MATCH_COUNT"
+
+# --- Calculate match percentage ---
+if [ "$TOTAL_LINES" -gt 0 ]; then
+    # bash cannot do floating point natively; multiply by 100 first
+    PERCENT=$(( (MATCH_COUNT * 100) / TOTAL_LINES ))
+    echo "  Match percentage  : ${PERCENT}%"
+fi
+
+echo ""
+
+# --- Show the last 5 matching lines ---
+# This uses grep to find all matches and tail to get the last 5
+echo "------------------------------------------------------------------"
+echo "  LAST 5 LINES MATCHING '$KEYWORD':"
+echo "------------------------------------------------------------------"
+echo ""
+
+# grep -i = case-insensitive, outputs all matching lines
+# tail -5 = show only the last 5 of those matches
+LAST_MATCHES=$(grep -i "$KEYWORD" "$LOGFILE" 2>/dev/null | tail -5)
+
+if [ -n "$LAST_MATCHES" ]; then
+    # Print each match with a line number prefix for readability
+    LINE_NUM=1
+    while IFS= read -r MATCH_LINE; do
+        echo "  [$LINE_NUM] $MATCH_LINE"
+        LINE_NUM=$((LINE_NUM + 1))
+    done <<< "$LAST_MATCHES"
+else
+    echo "  No matches found for '$KEYWORD' in this file."
+fi
+
+echo ""
+echo "=================================================================="
+echo "  TIP: Python applications write logs to /var/log/ or to a"
+echo "  custom path defined in their logging configuration."
+echo "  Common Python log keywords: ERROR, WARNING, CRITICAL, Traceback"
+echo "=================================================================="
+echo ""
+echo "  Analysis complete: $(date)"
