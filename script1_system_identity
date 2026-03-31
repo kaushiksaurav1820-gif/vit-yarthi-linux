@@ -1,0 +1,90 @@
+#!/bin/bash
+# ============================================================
+# Script 1: System Identity Report
+# Author: Saurav | Roll: 24BSA10300
+# Course: Open Source Software | OSS NGMC
+# Description: Displays a welcome screen with key system info
+#              and open-source context for the running OS.
+# ============================================================
+
+# --- Student and software variables ---
+STUDENT_NAME="Saurav"
+ROLL_NUMBER="24BSA10300"
+SOFTWARE_CHOICE="Python"
+
+# --- Gather system information using command substitution ---
+KERNEL=$(uname -r)                        # Kernel release version
+ARCH=$(uname -m)                          # Hardware architecture (x86_64, etc.)
+USER_NAME=$(whoami)                       # Current logged-in username
+HOME_DIR=$HOME                            # Home directory of current user
+UPTIME=$(uptime -p)                       # Human-readable uptime (e.g., "up 2 hours")
+CURRENT_DATE=$(date '+%A, %d %B %Y')      # e.g., "Friday, 27 March 2026"
+CURRENT_TIME=$(date '+%H:%M:%S %Z')       # e.g., "14:30:00 IST"
+HOSTNAME=$(hostname)                      # Machine hostname
+
+# --- Detect Linux distribution name ---
+# /etc/os-release is the standard file for distro information on modern Linux
+if [ -f /etc/os-release ]; then
+    DISTRO=$(grep '^PRETTY_NAME' /etc/os-release | cut -d= -f2 | tr -d '"')
+else
+    # Fallback if /etc/os-release is not available
+    DISTRO="Unknown Linux Distribution"
+fi
+
+# --- Determine the OS license ---
+# The Linux kernel is licensed under GPL v2. We display this for educational context.
+OS_LICENSE="GNU General Public License v2 (GPL-2.0)"
+
+# --- Python version check ---
+# Check if Python3 is available and get its version
+if command -v python3 &>/dev/null; then
+    PYTHON_VERSION=$(python3 --version 2>&1)
+    PYTHON_LICENSE="Python Software Foundation License (PSF-2.0)"
+else
+    PYTHON_VERSION="Python3 not found"
+    PYTHON_LICENSE="N/A"
+fi
+
+# --- Display the welcome screen ---
+echo "=================================================================="
+echo "          OPEN SOURCE AUDIT — SYSTEM IDENTITY REPORT             "
+echo "=================================================================="
+echo ""
+echo "  Student  : $STUDENT_NAME"
+echo "  Roll No  : $ROLL_NUMBER"
+echo "  Software : $SOFTWARE_CHOICE"
+echo ""
+echo "------------------------------------------------------------------"
+echo "  SYSTEM INFORMATION"
+echo "------------------------------------------------------------------"
+echo "  Hostname       : $HOSTNAME"
+echo "  Distribution   : $DISTRO"
+echo "  Kernel Version : $KERNEL"
+echo "  Architecture   : $ARCH"
+echo ""
+echo "------------------------------------------------------------------"
+echo "  SESSION INFORMATION"
+echo "------------------------------------------------------------------"
+echo "  Logged-in User : $USER_NAME"
+echo "  Home Directory : $HOME_DIR"
+echo "  System Uptime  : $UPTIME"
+echo "  Date           : $CURRENT_DATE"
+echo "  Time           : $CURRENT_TIME"
+echo ""
+echo "------------------------------------------------------------------"
+echo "  OPEN SOURCE LICENSE CONTEXT"
+echo "------------------------------------------------------------------"
+echo "  OS License     : $OS_LICENSE"
+echo "  $SOFTWARE_CHOICE License  : $PYTHON_LICENSE"
+echo "  Installed      : $PYTHON_VERSION"
+echo ""
+echo "------------------------------------------------------------------"
+echo "  The Linux kernel is free software: you can redistribute it"
+echo "  and/or modify it under the terms of GPL v2. Python is released"
+echo "  under the PSF License — a permissive license granting all four"
+echo "  freedoms: use, study, modify, and distribute."
+echo "------------------------------------------------------------------"
+echo ""
+echo "=================================================================="
+echo "  Report generated on: $(date)"
+echo "=================================================================="
