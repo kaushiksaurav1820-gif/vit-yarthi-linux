@@ -1,0 +1,114 @@
+#!/bin/bash
+# ============================================================
+# Script 3: Disk and Permission Auditor
+# Author: Saurav | Roll: 24BSA10300
+# Course: Open Source Software | OSS NGMC
+# Description: Loops through key Linux directories and reports
+#              permissions, ownership, and disk usage.
+#              Also audits Python-specific directories.
+# ============================================================
+
+echo "=================================================================="
+echo "  DISK AND PERMISSION AUDITOR"
+echo "  Student: Saurav | 24BSA10300"
+echo "  Date   : $(date '+%d %B %Y %H:%M:%S')"
+echo "=================================================================="
+echo ""
+
+# --- Standard system directories to audit ---
+# These are the key directories defined by the Linux FHS (Filesystem Hierarchy Standard)
+DIRS=("/etc" "/var/log" "/home" "/usr/bin" "/tmp" "/usr/lib" "/opt" "/root")
+
+echo "  STANDARD SYSTEM DIRECTORIES"
+echo "------------------------------------------------------------------"
+printf "  %-20s %-15s %-10s %-20s\n" "Directory" "Permissions" "Owner" "Size"
+printf "  %-20s %-15s %-10s %-20s\n" "---------" "-----------" "-----" "----"
+
+# --- For loop: iterate over each directory in the list ---
+for DIR in "${DIRS[@]}"; do
+    if [ -d "$DIR" ]; then
+        # Extract permissions, owner user, and owner group from ls -ld output
+        # awk splits the output by whitespace:
+        #   $1 = permissions string (e.g., drwxr-xr-x)
+        #   $3 = owner username
+        #   $4 = owner group
+        PERMS=$(ls -ld "$DIR" 2>/dev/null | awk '{print $1}')
+        OWNER=$(ls -ld "$DIR" 2>/dev/null | awk '{print $3}')
+        GROUP=$(ls -ld "$DIR" 2>/dev/null | awk '{print $4}')
+
+        # du -sh gives human-readable size; 2>/dev/null suppresses permission errors
+        # cut -f1 extracts just the size column (tab-separated)
+        SIZE=$(du -sh "$DIR" 2>/dev/null | cut -f1)
+        SIZE=${SIZE:-"N/A"}   # If du fails, show N/A
+
+        printf "  %-20s %-15s %-10s %-20s\n" "$DIR" "$PERMS" "$OWNER:$GROUP" "$SIZE"
+    else
+        # Directory does not exist on this system (common for minimal installs)
+        printf "  %-20s %s\n" "$DIR" "[Does not exist on this system]"
+    fi
+done
+
+echo ""
+
+# --- Python-specific directory audit ---
+# These are the standard locations where Python installs its components on Linux
+echo "=================================================================="
+echo "  PYTHON-SPECIFIC DIRECTORY AUDIT"
+echo "=================================================================="
+echo ""
+
+# Define Python-related paths to check
+PYTHON_DIRS=(
+    "/usr/bin/python3"
+    "/usr/lib/python3"
+    "/usr/local/lib/python3"
+    "/usr/lib/python3/dist-packages"
+    "/usr/local/lib"
+    "/etc/python3"
+    "/usr/share/doc/python3"
+)
+
+printf "  %-35s %-18s %-10s\n" "Path" "Permissions" "Exists?"
+printf "  %-35s %-18s %-10s\n" "----" "-----------" "-------"
+
+for PDIR in "${PYTHON_DIRS[@]}"; do
+    # Check if it's a file or directory (Python interpreter is a file)
+    if [ -e "$PDIR" ]; then
+        PERMS=$(ls -ld "$PDIR" 2>/dev/null | awk '{print $1}')
+        OWNER=$(ls -ld "$PDIR" 2>/dev/null | awk '{print $3}')
+        printf "  %-35s %-18s %-10s\n" "$PDIR" "$PERMS ($OWNER)" "YES"
+    else
+        printf "  %-35s %-18s %-10s\n" "$PDIR" "---" "NO"
+    fi
+done
+
+echo ""
+
+# --- Find the actual Python3 interpreter location ---
+echo "=================================================================="
+echo "  PYTHON INTERPRETER LOCATION"
+echo "=================================================================="
+if command -v python3 &>/dev/null; then
+    PY_PATH=$(command -v python3)
+    PY_REAL=$(readlink -f "$PY_PATH")   # Resolve symlinks to find the real binary
+    PY_PERMS=$(ls -l "$PY_REAL" 2>/dev/null | awk '{print $1, $3, $4}')
+    echo ""
+    echo "  Symlink   : $PY_PATH"
+    echo "  Real path : $PY_REAL"
+    echo "  File perms: $PY_PERMS"
+    echo "  Version   : $(python3 --version 2>&1)"
+else
+    echo ""
+    echo "  python3 not found in PATH"
+fi
+
+echo ""
+echo "=================================================================="
+echo "  NOTE ON PERMISSIONS:"
+echo "  drwxr-xr-x means: owner=read/write/execute, group=read/execute,"
+echo "  others=read/execute. The 'd' prefix indicates a directory."
+echo "  Files in /usr/bin are typically owned by root to prevent"
+echo "  unauthorized modification — a key Linux security principle."
+echo "=================================================================="
+echo ""
+echo "  Audit complete: $(date)"
