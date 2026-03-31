@@ -1,0 +1,159 @@
+#!/bin/bash
+# ============================================================
+# Script 2: FOSS Package Inspector
+# Author: Saurav | Roll: 24BSA10300
+# Course: Open Source Software | OSS NGMC
+# Description: Checks if a FOSS package is installed, prints
+#              version/license info, and displays a philosophy
+#              note using a case statement.
+# Usage: ./script2_foss_inspector.sh [package-name]
+#        If no argument is given, defaults to python3.
+# ============================================================
+
+# --- Accept a package name as argument; default to python3 ---
+PACKAGE=${1:-python3}
+
+echo "=============================================="
+echo "  FOSS Package Inspector"
+echo "  Student: Saurav | 24BSA10300"
+echo "=============================================="
+echo ""
+echo "  Checking package: $PACKAGE"
+echo "----------------------------------------------"
+
+# --- Detect package manager and check installation ---
+# We support both RPM-based (Red Hat, CentOS, Fedora) and
+# Debian-based (Ubuntu, Debian, Mint) distributions.
+
+check_rpm() {
+    # rpm -q returns 0 if installed, non-zero if not
+    if rpm -q "$PACKAGE" &>/dev/null; then
+        echo "  Status  : INSTALLED (RPM)"
+        echo ""
+        echo "  Package Details:"
+        # rpm -qi gives full info; grep filters key fields
+        rpm -qi "$PACKAGE" 2>/dev/null | grep -E 'Version|License|Summary|URL' | \
+            sed 's/^/  /'
+        return 0
+    else
+        return 1
+    fi
+}
+
+check_dpkg() {
+    # dpkg -l lists packages; grep for exact match
+    if dpkg -l "$PACKAGE" 2>/dev/null | grep -q "^ii"; then
+        echo "  Status  : INSTALLED (dpkg/apt)"
+        echo ""
+        echo "  Package Details:"
+        # dpkg -s gives detailed status info
+        dpkg -s "$PACKAGE" 2>/dev/null | grep -E 'Version|License|Description|Homepage' | \
+            sed 's/^/  /'
+        return 0
+    else
+        return 1
+    fi
+}
+
+# --- Try RPM first, then dpkg, then report not found ---
+INSTALLED=false
+
+if command -v rpm &>/dev/null; then
+    if check_rpm; then
+        INSTALLED=true
+    fi
+fi
+
+if [ "$INSTALLED" = false ] && command -v dpkg &>/dev/null; then
+    if check_dpkg; then
+        INSTALLED=true
+    fi
+fi
+
+# --- If still not found by package manager, check PATH directly ---
+if [ "$INSTALLED" = false ]; then
+    if command -v "$PACKAGE" &>/dev/null; then
+        echo "  Status  : Found in PATH (not via package manager)"
+        echo "  Path    : $(command -v $PACKAGE)"
+        INSTALLED=true
+    else
+        echo "  Status  : NOT INSTALLED"
+        echo ""
+        echo "  Tip: Install with one of the following:"
+        echo "    sudo apt install $PACKAGE   (Debian/Ubuntu)"
+        echo "    sudo dnf install $PACKAGE   (RHEL/Fedora)"
+    fi
+fi
+
+# --- Python-specific version display ---
+if [ "$PACKAGE" = "python3" ] || [ "$PACKAGE" = "python" ]; then
+    if command -v python3 &>/dev/null; then
+        echo ""
+        echo "  Runtime Version : $(python3 --version 2>&1)"
+        echo "  Interpreter     : $(command -v python3)"
+        echo "  Standard Lib    : $(python3 -c 'import sys; print(sys.prefix + \"/lib/python\" + sys.version[:3])')"
+    fi
+fi
+
+echo ""
+echo "----------------------------------------------"
+echo "  OPEN SOURCE PHILOSOPHY NOTE"
+echo "----------------------------------------------"
+
+# --- case statement: print a philosophy note based on package name ---
+# The case statement matches the package name to a known FOSS project
+# and prints a one-line context statement about its significance.
+case "$PACKAGE" in
+    python3 | python)
+        echo "  Python: Born in 1989 from a desire for readable, open scripting."
+        echo "  Guido van Rossum released it publicly so the world could improve it."
+        echo "  License: PSF-2.0 — permissive, nonprofit-governed, freely forever."
+        ;;
+    httpd | apache2)
+        echo "  Apache HTTP Server: The web server that helped build the open internet."
+        echo "  Apache Software Foundation ensures it stays community-owned, not corporate."
+        echo "  License: Apache 2.0 — permissive, with explicit patent grant."
+        ;;
+    mysql | mariadb)
+        echo "  MySQL/MariaDB: The database at the heart of millions of web applications."
+        echo "  MariaDB forked from MySQL to protect community control after Oracle's acquisition."
+        echo "  License: GPL v2 — copyleft, ensuring derivatives stay open."
+        ;;
+    firefox)
+        echo "  Firefox: Mozilla's browser — a nonprofit fighting for an open web."
+        echo "  It exists because Netscape chose to release its source code in 1998."
+        echo "  License: MPL 2.0 — a file-level copyleft balancing openness and flexibility."
+        ;;
+    git)
+        echo "  Git: Linus Torvalds built it in 2005 when BitKeeper revoked free access."
+        echo "  A direct demonstration of what happens when proprietary tools fail open projects."
+        echo "  License: GPL v2 — the same license as the Linux kernel it was built to serve."
+        ;;
+    vlc)
+        echo "  VLC: Built by students in Paris who wanted to stream video over their network."
+        echo "  It became the most widely used media player because it was free and universal."
+        echo "  License: LGPL/GPL — plays anything, owned by no one."
+        ;;
+    vim | neovim)
+        echo "  Vim: A text editor that has outlasted every proprietary editor of its era."
+        echo "  Bram Moolenaar maintained it for 30 years; the community carries it forward."
+        echo "  License: Vim license (GPL-compatible) — free for all, charityware by spirit."
+        ;;
+    gcc | g++)
+        echo "  GCC: The GNU Compiler Collection — the tool that compiles most of the world's C."
+        echo "  Without GCC, building Python, Linux, or any open-source C software would be impossible."
+        echo "  License: GPL v3 with runtime exception — open compiler, open ecosystem."
+        ;;
+    *)
+        # Default case for packages not explicitly listed
+        echo "  $PACKAGE is an open-source package. Every package on this system represents"
+        echo "  a choice by someone to share their work freely rather than keep it proprietary."
+        echo "  Check its license with: rpm -qi $PACKAGE | grep License"
+        echo "  or: dpkg -s $PACKAGE | grep License"
+        ;;
+esac
+
+echo ""
+echo "=============================================="
+echo "  Inspection complete: $(date '+%H:%M:%S')"
+echo "=============================================="
